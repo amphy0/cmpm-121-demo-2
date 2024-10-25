@@ -15,50 +15,73 @@ canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
 
-//creating the clear button
-const clearButton = document.createElement("button");
-clearButton.textContent = "Clear Canvas";
-app.appendChild(clearButton);
-
+//variables for canvas
+const lines: { x: number; y: number }[][] = [];
+let currentLine: { x: number; y: number }[] | null = null;
 let isDrawing = false;
 let x = 0;
 let y = 0;
+
+//context
 const context = canvas.getContext("2d");
+
 //event listener for when click starts
 canvas.addEventListener("mousedown", (e) => {
     x = e.offsetX;
     y = e.offsetY;
     isDrawing = true;
+
+    currentLine = [];
+    lines.push(currentLine);
+    currentLine.push({ x, y });
 });
 //event listener for how mouse moves
 canvas.addEventListener("mousemove", (e) => {
-    if (isDrawing) {
-        drawLine(context, x, y, e.offsetX, e.offsetY);
-        x = e.offsetX;
-        y = e.offsetY;
+    if (isDrawing && currentLine) {
+        const newX = e.offsetX;
+        const newY = e.offsetY;
+        currentLine.push({ x: newX, y: newY });
+
+        const event = new Event("drawing-changed");
+        canvas.dispatchEvent(event);
     }
 });
 //event listener for when click stops
 window.addEventListener("mouseup", (e) => {
     if (isDrawing) {
-        drawLine(context, x, y, e.offsetX, e.offsetY);
-        x = 0;
-        y = 0;
         isDrawing = false;
+        currentLine = null;
     }
 });
-//function to draw the line
-function drawLine(context, x1, y1, x2, y2) {
-    context.beginPath();
+//listener for drawing changed
+canvas.addEventListener("drawing-changed", () => {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+
     context.strokeStyle = "black";
     context.lineWidth = 1;
-    context.moveTo(x1, y1);
-    context.lineTo(x2, y2);
-    context.stroke();
-    context.closePath();
-}
+
+    lines.forEach((line) => {
+        context.beginPath();
+        line.forEach((point, index) => {
+            if (index == 0) {
+                context.moveTo(point.x, point.y);
+            } else {
+                context.lineTo(point.x, point.y);
+            }
+        });
+        context.stroke();
+        context.closePath();
+    });
+});
+
+//creating the clear button
+const clearButton = document.createElement("button");
+clearButton.textContent = "Clear Canvas";
+app.appendChild(clearButton);
 
 //clear the canvas
 clearButton.addEventListener("click", () => {
-    context.clearRect(0, 0, canvas.width, canvas.height);
+    lines.length = 0;
+    const event = new Event("drawing-changed");
+    canvas.dispatchEvent(event);
 });
