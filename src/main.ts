@@ -15,33 +15,61 @@ canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
 
+class Line {
+    private points: { x: number; y: number }[] = [];
+
+    constructor(initialX: number, initialY: number) {
+        this.points.push({ x: initialX, y: initialY });
+    }
+
+    public drag(x: number, y: number): void {
+        this.points.push({ x, y });
+    }
+
+    public display(ctx: CanvasRenderingContext2D): void {
+        ctx.beginPath();
+        ctx.strokeStyle = "black";
+        ctx.lineWidth = 1;
+
+        this.points.forEach((point, index) => {
+            if (index === 0) {
+                ctx.moveTo(point.x, point.y);
+            } else {
+                ctx.lineTo(point.x, point.y);
+            }
+        });
+
+        ctx.stroke();
+        ctx.closePath();
+    }
+}
+
 //variables for canvas
-const lines: { x: number; y: number }[][] = [];
-const redoStack: { x: number; y: number }[][] = [];
-let currentLine: { x: number; y: number }[] | null = null;
+const lines: Line[] = [];
+const redoStack: Line[] = [];
+let currentLine: Line | null = null;
 let isDrawing = false;
-let x = 0;
-let y = 0;
 
 //context
 const context = canvas.getContext("2d");
 
 //event listener for when click starts
 canvas.addEventListener("mousedown", (e) => {
-    x = e.offsetX;
-    y = e.offsetY;
+    redoStack.length = 0;
+
+    const x = e.offsetX;
+    const y = e.offsetY;
     isDrawing = true;
 
-    currentLine = [];
+    currentLine = new Line(x, y);
     lines.push(currentLine);
-    currentLine.push({ x, y });
 });
 //event listener for how mouse moves
 canvas.addEventListener("mousemove", (e) => {
     if (isDrawing && currentLine) {
         const newX = e.offsetX;
         const newY = e.offsetY;
-        currentLine.push({ x: newX, y: newY });
+        currentLine.drag(newX, newY);
 
         const event = new Event("drawing-changed");
         canvas.dispatchEvent(event);
@@ -62,16 +90,7 @@ canvas.addEventListener("drawing-changed", () => {
     context.lineWidth = 1;
 
     lines.forEach((line) => {
-        context.beginPath();
-        line.forEach((point, index) => {
-            if (index == 0) {
-                context.moveTo(point.x, point.y);
-            } else {
-                context.lineTo(point.x, point.y);
-            }
-        });
-        context.stroke();
-        context.closePath();
+        line.display(context);
     });
 });
 
@@ -83,6 +102,7 @@ app.appendChild(clearButton);
 //clear the canvas
 clearButton.addEventListener("click", () => {
     lines.length = 0;
+    redoStack.length = 0;
     const event = new Event("drawing-changed");
     canvas.dispatchEvent(event);
 });
