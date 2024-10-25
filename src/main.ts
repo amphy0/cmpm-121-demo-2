@@ -17,6 +17,7 @@ app.append(canvas);
 
 //variables for canvas
 const lines: { x: number; y: number }[][] = [];
+const redoStack: { x: number; y: number }[][] = [];
 let currentLine: { x: number; y: number }[] | null = null;
 let isDrawing = false;
 let x = 0;
@@ -82,6 +83,40 @@ app.appendChild(clearButton);
 //clear the canvas
 clearButton.addEventListener("click", () => {
     lines.length = 0;
+    const event = new Event("drawing-changed");
+    canvas.dispatchEvent(event);
+});
+
+//creating the undo button
+const undoButton = document.createElement("button");
+undoButton.textContent = "Undo";
+app.appendChild(undoButton);
+
+//undo the last action
+undoButton.addEventListener("click", () => {
+    if (lines.length > 0) {
+        const previousLine = lines.pop();
+        if (previousLine) {
+            redoStack.push(previousLine);
+        }
+    }
+    const event = new Event("drawing-changed");
+    canvas.dispatchEvent(event);
+});
+
+//creating the redo button
+const redoButton = document.createElement("button");
+redoButton.textContent = "Redo";
+app.appendChild(redoButton);
+
+//redo the last action
+redoButton.addEventListener("click", () => {
+    if (redoStack.length > 0) {
+        const previousLine = redoStack.pop();
+        if (previousLine) {
+            lines.push(previousLine);
+        }
+    }
     const event = new Event("drawing-changed");
     canvas.dispatchEvent(event);
 });
