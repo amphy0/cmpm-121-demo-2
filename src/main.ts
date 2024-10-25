@@ -15,11 +15,14 @@ canvas.width = 256;
 canvas.height = 256;
 app.append(canvas);
 
+//line class
 class Line {
     private points: { x: number; y: number }[] = [];
+    private thickness: number;
 
-    constructor(initialX: number, initialY: number) {
+    constructor(initialX: number, initialY: number, thickness: number) {
         this.points.push({ x: initialX, y: initialY });
+        this.thickness = thickness;
     }
 
     public drag(x: number, y: number): void {
@@ -29,7 +32,7 @@ class Line {
     public display(ctx: CanvasRenderingContext2D): void {
         ctx.beginPath();
         ctx.strokeStyle = "black";
-        ctx.lineWidth = 1;
+        ctx.lineWidth = this.thickness;
 
         this.points.forEach((point, index) => {
             if (index === 0) {
@@ -49,6 +52,7 @@ const lines: Line[] = [];
 const redoStack: Line[] = [];
 let currentLine: Line | null = null;
 let isDrawing = false;
+let currentThickness = 1;
 
 //context
 const context = canvas.getContext("2d");
@@ -61,7 +65,7 @@ canvas.addEventListener("mousedown", (e) => {
     const y = e.offsetY;
     isDrawing = true;
 
-    currentLine = new Line(x, y);
+    currentLine = new Line(x, y, currentThickness);
     lines.push(currentLine);
 });
 //event listener for how mouse moves
@@ -92,6 +96,27 @@ canvas.addEventListener("drawing-changed", () => {
     lines.forEach((line) => {
         line.display(context);
     });
+});
+
+//creating buttons for thin and thick markers
+const thinButton = document.createElement("button");
+thinButton.textContent = "Thin";
+thinButton.className = "tool-button";
+app.appendChild(thinButton);
+
+const thickButton = document.createElement("button");
+thickButton.textContent = "Thick";
+thickButton.className = "tool-button";
+app.appendChild(thickButton);
+
+//set thickness to thin
+thinButton.addEventListener("click", () => {
+    currentThickness = 1;
+});
+
+//set thickness to thin
+thickButton.addEventListener("click", () => {
+    currentThickness = 5;
 });
 
 //creating the clear button
