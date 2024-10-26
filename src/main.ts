@@ -1,4 +1,4 @@
-import "./style.css";
+﻿import "./style.css";
 
 const APP_NAME = "Sticker Sketchpad";
 const app = document.querySelector<HTMLDivElement>("#app")!;
@@ -80,41 +80,95 @@ class CursorPreview {
         ctx.fillStyle = "black";
         ctx.fillText("*", this.x - 8, this.y + 16);
     }
+}
 
+class StickerPreview {
+    private x: number;
+    private y: number;
+    private sticker: string;
 
+    constructor(sticker: string, x: number, y: number) {
+        this.sticker = sticker;
+        this.x = x;
+        this.y = y;
+    }
 
+    public updatePosition(x: number, y: number): void {
+        this.x = x;
+        this.y = y;
+    }
+
+    public draw(ctx: CanvasRenderingContext2D): void {
+        ctx.font = "32px monospace";
+        ctx.fillText(this.sticker, this.x - 16, this.y + 16);
+    }
+}
+
+class StickerLine {
+    private x: number;
+    private y: number;
+    private sticker: string;
+
+    constructor(sticker: string, x: number, y: number) {
+        this.sticker = sticker;
+        this.x = x;
+        this.y = y;
+    }
+
+    public display(ctx: CanvasRenderingContext2D): void {
+        ctx.font = "32px monospace";
+        ctx.fillText(this.sticker, this.x - 16, this.y + 16);
+    }
 }
 
 //variables for canvas
 const lines: Line[] = [];
+const stickers: StickerLine[] = [];
 const redoStack: Line[] = [];
 let currentLine: Line | null = null;
 let isDrawing = false;
 let currentThickness = 1;
-
-//
 let cursorPreview: CursorPreview | null = null;
+// Sticker emojis
+const emojiStickers = ["🌟", "🍕", "🎉"];
+let currentSticker: string | null = null;
+let stickerPreview: StickerPreview | null = null;
 
 //context
 const context = canvas.getContext("2d");
 
 //event listener for when click starts
 canvas.addEventListener("mousedown", (e) => {
-    redoStack.length = 0;
-
     const x = e.offsetX;
     const y = e.offsetY;
-    isDrawing = true;
 
-    currentLine = new Line(x, y, currentThickness);
-    lines.push(currentLine);
+    if (currentSticker) {
+        const stickerLine = new StickerLine(currentSticker, x, y);
+        stickers.push(stickerLine);
+        const event = new Event("drawing-changed");
+        canvas.dispatchEvent(event);
+    } else {
+        redoStack.length = 0;
+        isDrawing = true;
+        currentLine = new Line(x, y, currentThickness);
+        lines.push(currentLine);
+    }
 });
 //event listener for how mouse moves
 canvas.addEventListener("mousemove", (e) => {
     const newX = e.offsetX;
     const newY = e.offsetY;
 
-    if (!isDrawing) {
+    if (currentSticker) {
+        if (!stickerPreview) {
+            stickerPreview = new StickerPreview(currentSticker, newX, newY);
+        } else {
+            stickerPreview.updatePosition(newX, newY);
+        }
+        const event = new Event("tool-moved");
+        canvas.dispatchEvent(event);
+    }
+    else if (!isDrawing) {
         if (!cursorPreview) {
             cursorPreview = new CursorPreview(newX, newY, currentThickness);
         } else {
@@ -123,7 +177,7 @@ canvas.addEventListener("mousemove", (e) => {
         const event = new Event("tool-moved");
         canvas.dispatchEvent(event);
     }
-
+    
     if (isDrawing && currentLine) {
         currentLine.drag(newX, newY);
         const event = new Event("drawing-changed");
@@ -142,46 +196,47 @@ window.addEventListener("mouseup", (e) => {
 canvas.addEventListener("drawing-changed", () => {
     context.clearRect(0, 0, canvas.width, canvas.height);
 
-    lines.forEach((line) => {
-        line.display(context);
-    });
-
+    lines.forEach((line) => line.display(context));
+    stickers.forEach((sticker) => sticker.display(context));
     if (cursorPreview) {
         cursorPreview.draw(context);
+    }
+    if (stickerPreview) {
+        stickerPreview.draw(context);
     }
 });
 
 //listener for cursor moving
 canvas.addEventListener("tool-moved", () => {
-    if (cursorPreview) {
-        context.clearRect(0, 0, canvas.width, canvas.height);
-        lines.forEach((line) => {
-            line.display(context);
-        });
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    lines.forEach((line) => line.display(context));
+    stickers.forEach((sticker) => sticker.display(context));
+
+    // Draw cursor or sticker preview
+    if (cursorPreview && !currentSticker) {
         cursorPreview.draw(context);
+    }
+    if (stickerPreview && currentSticker) {
+        stickerPreview.draw(context);
     }
 });
 
 //creating buttons for thin and thick markers
 const thinButton = document.createElement("button");
 thinButton.textContent = "Thin";
-thinButton.className = "tool-button";
 app.appendChild(thinButton);
 
 const thickButton = document.createElement("button");
 thickButton.textContent = "Thick";
-thickButton.className = "tool-button";
 app.appendChild(thickButton);
 
 //set thickness to thin
 thinButton.addEventListener("click", () => {
     currentThickness = 1;
-    context.font = "8px monospace";
 });
 
 //set thickness to thin
 thickButton.addEventListener("click", () => {
-    context.font = "32px monospace";
     currentThickness = 5;
 });
 
@@ -194,6 +249,7 @@ app.appendChild(clearButton);
 clearButton.addEventListener("click", () => {
     lines.length = 0;
     redoStack.length = 0;
+    stickers.length = 0;
     cursorPreview = null;
     const event = new Event("drawing-changed");
     canvas.dispatchEvent(event);
@@ -231,4 +287,18 @@ redoButton.addEventListener("click", () => {
     }
     const event = new Event("drawing-changed");
     canvas.dispatchEvent(event);
+});
+
+//creating sticker buttons
+emojiStickers.forEach((sticker) => {
+    const stickerButton = document.createElement("button");
+    stickerButton.textContent = sticker;
+    app.appendChild(stickerButton);
+
+    stickerButton.addEventListener("click", () => {
+        currentSticker = sticker;
+        stickerPreview = new StickerPreview(sticker, canvas.width / 2, canvas.height / 2);
+        const event = new Event("tool-moved");
+        canvas.dispatchEvent(event);
+    });
 });
