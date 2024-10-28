@@ -130,7 +130,7 @@ let isDrawing = false;
 let currentThickness = 1;
 let cursorPreview: CursorPreview | null = null;
 // Sticker emojis
-const emojiStickers = ["🌟", "🍕", "🎉"];
+const emojiStickers = ["🍟", "🍕", "🍣"];
 let currentSticker: string | null = null;
 let stickerPreview: StickerPreview | null = null;
 
