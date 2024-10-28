@@ -323,3 +323,16 @@ emojiStickers.forEach((sticker) => {
         canvas.dispatchEvent(event);
     });
 });
+
+//export button
+const exportButton = document.createElement("button");
+exportButton.textContent = "Export";
+app.appendChild(exportButton);
+
+exportButton.addEventListener("click", () => {
+    const anchor = document.createElement("a");
+    anchor.href = canvas.toDataURL("image/png");
+    anchor.download = "sketchpad.png";
+    anchor.click();
+
+});
