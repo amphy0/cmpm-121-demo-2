@@ -289,6 +289,27 @@ redoButton.addEventListener("click", () => {
     canvas.dispatchEvent(event);
 });
 
+
+//creating the create sticker button
+const createButton = document.createElement("button");
+createButton.textContent = "Create Sticker";
+app.appendChild(createButton);
+
+createButton.addEventListener("click", () => {
+    const text = prompt("Custom sticker text", "♥");
+    emojiStickers.push(text);
+    const stickerButton = document.createElement("button");
+    stickerButton.textContent = text;
+    app.appendChild(stickerButton);
+
+    stickerButton.addEventListener("click", () => {
+        currentSticker = text;
+        stickerPreview = new StickerPreview(text, canvas.width / 2, canvas.height / 2);
+        const event = new Event("tool-moved");
+        canvas.dispatchEvent(event);
+    });
+});
+
 //creating sticker buttons
 emojiStickers.forEach((sticker) => {
     const stickerButton = document.createElement("button");
