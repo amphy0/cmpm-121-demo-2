@@ -15,6 +15,7 @@ canvas.width = 256;
 canvas.height = 256;
 canvas.style.cursor = "none";
 app.append(canvas);
+let currentColor = "black";
 
 //line class
 class Line {
@@ -32,7 +33,7 @@ class Line {
 
     public display(ctx: CanvasRenderingContext2D): void {
         ctx.beginPath();
-        ctx.strokeStyle = "black";
+        ctx.strokeStyle = currentColor;
         ctx.lineWidth = this.thickness;
 
         this.points.forEach((point, index) => {
@@ -335,4 +336,17 @@ exportButton.addEventListener("click", () => {
     anchor.download = "sketchpad.png";
     anchor.click();
 
+});
+
+//color buttons
+const colors = ["black", "red", "green", "blue", "yellow"];
+colors.forEach((color) => {
+    const colorButton = document.createElement("button");
+    colorButton.style.backgroundColor = color;
+    colorButton.textContent = color;
+    app.appendChild(colorButton);
+
+    colorButton.addEventListener("click", () => {
+        currentColor = color;
+    });
 });
