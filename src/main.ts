@@ -1,5 +1,6 @@
 ﻿import "./style.css";
 
+//test
 const APP_NAME = "Sticker Sketchpad";
 const app = document.querySelector<HTMLDivElement>("#app")!;
 
